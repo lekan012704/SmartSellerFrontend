@@ -23,7 +23,7 @@
 
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "https://smartseller-qda3.onrender.com/";
+  "https://smartseller-qda3.onrender.com/api";
 
 const TOKEN_KEY   = "smartseller-token";
 const USER_KEY    = "smartseller-user";
