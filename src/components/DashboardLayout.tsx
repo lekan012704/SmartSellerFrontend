@@ -87,12 +87,29 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 >
                   <item.icon className="h-5 w-5" />
                   {item.label}
-                  {active && (
-                    <ChevronRight className="h-4 w-4 ml-auto" />
-                  )}
+                  {active && <ChevronRight className="h-4 w-4 ml-auto" />}
                 </Link>
               );
             })}
+
+            {/* Admin link in sidebar (visible on mobile) */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                  location.pathname.startsWith("/admin")
+                    ? "gradient-primary text-primary-foreground shadow-glow"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                <UserCog className="h-5 w-5" />
+                Admin
+                {location.pathname.startsWith("/admin") && (
+                  <ChevronRight className="h-4 w-4 ml-auto" />
+                )}
+              </Link>
+            )}
           </nav>
 
           {/* User */}
@@ -126,10 +143,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex-1" />
+          {/* Admin link in top bar (visible on desktop only, sidebar handles mobile) */}
           {isAdmin && (
             <Link
               to="/admin"
-              className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
+              className="hidden lg:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
             >
               <Shield className="h-3.5 w-3.5" /> Admin
             </Link>
