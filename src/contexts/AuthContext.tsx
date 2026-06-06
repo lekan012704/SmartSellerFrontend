@@ -22,7 +22,7 @@ interface User {
   role?: string;
 }
 
-const ADMIN_ROLES = ["SuperAdmin", "Admin"];
+const ADMIN_ROLES = ["SuperAdmin", "CompanyAdmin"];
 
 const isAdminRole = (role?: string) =>
   !!role && ADMIN_ROLES.includes(role);
@@ -193,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin =
     isAdminRole(user?.role) ||
     permissions.includes("SuperAdmin") ||
-    permissions.includes("Admin") ||
+    permissions.includes("CompanyAdmin") ||
     permissions.includes("Role.View") ||
     permissions.includes("User.View");
 
