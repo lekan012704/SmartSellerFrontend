@@ -38,10 +38,10 @@ const Roles = () => {
   const [submitting, setSubmitting] = useState(false);
   const [permSearch, setPermSearch] = useState("");
 
-  const canCreate = hasPermission("Permissions.Role.Create");
-  const canEdit = hasPermission("Permissions.Role.Edit");
-  const canDelete = hasPermission("Permissions.Role.Delete");
-  const canAssign = hasPermission("Permissions.User.AssignRole");
+  const canCreate = hasPermission("Role.Create");
+  const canEdit = hasPermission("Role.Edit");
+  const canDelete = hasPermission("Role.Delete");
+  const canAssign = hasPermission("User.AssignRole");
 
   const [form, setForm] = useState({
     roleName: "",
@@ -86,13 +86,32 @@ const Roles = () => {
   }
 };
 
-  const loadUsers = async () => {
+//   const loadUsers = async () => {
+//   const cid = companyStore.get();
+//   if (!cid) return;
+
+//   try {
+//     const res = await AccountAPI.getUsersByCompany(cid);
+
+//     const list = Array.isArray(res)
+//       ? res
+//       : Array.isArray((res as any)?.data)
+//       ? (res as any).data
+//       : [];
+
+//     setUsers(list);
+//   } catch {
+//     setUsers([]);
+//   }
+// };
+const loadUsers = async () => {
   const cid = companyStore.get();
   if (!cid) return;
 
   try {
     const res = await AccountAPI.getUsersByCompany(cid);
-
+    console.log("users res:", JSON.stringify(res)); // ADD THIS
+    
     const list = Array.isArray(res)
       ? res
       : Array.isArray((res as any)?.data)
@@ -100,7 +119,8 @@ const Roles = () => {
       : [];
 
     setUsers(list);
-  } catch {
+  } catch (e) {
+    console.error("users error:", e);
     setUsers([]);
   }
 };
