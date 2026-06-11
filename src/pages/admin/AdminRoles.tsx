@@ -20,6 +20,13 @@ import { RoleAPI, AccountAPI, type RoleDto, type UserDto } from "@/services";
 import { ApiError, companyStore } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Helper to unwrap API envelope
+const unwrap = (res: unknown): any[] => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray((res as any)?.data)) return (res as any).data;
+  return [];
+};
+
 const Roles = () => {
   const { toast } = useToast();
   const { hasPermission } = useAuth();
@@ -38,6 +45,7 @@ const Roles = () => {
   const [submitting, setSubmitting] = useState(false);
   const [permSearch, setPermSearch] = useState("");
 
+  // Permission keys match what the API actually returns (no "Permissions." prefix)
   const canCreate = hasPermission("Role.Create");
   const canEdit = hasPermission("Role.Edit");
   const canDelete = hasPermission("Role.Delete");
@@ -50,80 +58,38 @@ const Roles = () => {
     claims: [] as string[],
   });
 
-  // user-permissions form
   const [userPermForm, setUserPermForm] = useState({
     userId: "",
     permissions: [] as string[],
   });
 
- const loadAll = async () => {
-  setLoading(true);
-  try {
-    const [rolesRes, permsRes] = await Promise.all([
-      RoleAPI.list().catch(() => []),
-      RoleAPI.allPermissions().catch(() => []),
-    ]);
+  const loadAll = async () => {
+    setLoading(true);
+    try {
+      const [rolesRes, permsRes] = await Promise.all([
+        RoleAPI.list().catch(() => []),
+        RoleAPI.allPermissions().catch(() => []),
+      ]);
+      setRoles(unwrap(rolesRes));
+      setAllPerms(unwrap(permsRes));
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Failed to load";
+      toast({ title: "Couldn't load roles", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const rolesList = Array.isArray(rolesRes)
-      ? rolesRes
-      : Array.isArray((rolesRes as any)?.data)
-      ? (rolesRes as any).data
-      : [];
-
-    const permsList = Array.isArray(permsRes)
-      ? permsRes
-      : Array.isArray((permsRes as any)?.data)
-      ? (permsRes as any).data
-      : [];
-
-    setRoles(rolesList);
-    setAllPerms(permsList);
-  } catch (err) {
-    const msg = err instanceof ApiError ? err.message : "Failed to load";
-    toast({ title: "Couldn't load roles", description: msg, variant: "destructive" });
-  } finally {
-    setLoading(false);
-  }
-};
-
-//   const loadUsers = async () => {
-//   const cid = companyStore.get();
-//   if (!cid) return;
-
-//   try {
-//     const res = await AccountAPI.getUsersByCompany(cid);
-
-//     const list = Array.isArray(res)
-//       ? res
-//       : Array.isArray((res as any)?.data)
-//       ? (res as any).data
-//       : [];
-
-//     setUsers(list);
-//   } catch {
-//     setUsers([]);
-//   }
-// };
-const loadUsers = async () => {
-  const cid = companyStore.get();
-  if (!cid) return;
-
-  try {
-    const res = await AccountAPI.getUsersByCompany(cid);
-    console.log("users res:", JSON.stringify(res)); // ADD THIS
-    
-    const list = Array.isArray(res)
-      ? res
-      : Array.isArray((res as any)?.data)
-      ? (res as any).data
-      : [];
-
-    setUsers(list);
-  } catch (e) {
-    console.error("users error:", e);
-    setUsers([]);
-  }
-};
+  const loadUsers = async () => {
+    const cid = companyStore.get();
+    if (!cid) return;
+    try {
+      const res = await AccountAPI.getUsersByCompany(cid);
+      setUsers(unwrap(res));
+    } catch {
+      setUsers([]);
+    }
+  };
 
   useEffect(() => {
     loadAll();
@@ -211,11 +177,12 @@ const loadUsers = async () => {
     setUsersOpen(true);
     setUsersInRoleLoading(true);
     try {
-      const u = await RoleAPI.usersInRole(id);
-      setUsersInRole(u || []);
+      const res = await RoleAPI.usersInRole(id);
+      setUsersInRole(unwrap(res));
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Failed";
       toast({ title: "Couldn't load users", description: msg, variant: "destructive" });
+      setUsersInRole([]);
     } finally {
       setUsersInRoleLoading(false);
     }
@@ -409,7 +376,7 @@ const loadUsers = async () => {
           ) : (
             <div className="space-y-2">
               {usersInRole.map((u) => (
-                <div key={u.id} className="flex items-center justify-between p-2 rounded bg-secondary/40">
+                <div key={u.id || u.userId || u.email} className="flex items-center justify-between p-2 rounded bg-secondary/40">
                   <div>
                     <p className="text-sm font-medium">{u.fullName || u.userName}</p>
                     <p className="text-xs text-muted-foreground">{u.email}</p>
@@ -424,7 +391,7 @@ const loadUsers = async () => {
               <div className="flex flex-wrap gap-1">
                 {users.map((u) => (
                   <Button
-                    key={u.id}
+                    key={u.id || u.userId || u.email}
                     size="sm"
                     variant="outline"
                     onClick={() => assignRoleToUser(u.id, editing?.roleName || editing?.name || "")}
@@ -457,7 +424,7 @@ const loadUsers = async () => {
                 >
                   <option value="">Select user...</option>
                   {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.fullName || u.userName} ({u.email})</option>
+                    <option key={u.id || u.userId || u.email} value={u.id}>{u.fullName || u.userName} ({u.email})</option>
                   ))}
                 </select>
               </div>
@@ -504,7 +471,7 @@ const PermPicker = ({
   if (all.length === 0) {
     return (
       <div className="text-xs text-muted-foreground p-3 rounded bg-secondary/40">
-        Permissions list unavailable. Type a comma-separated list below.
+        Permissions list unavailable.
       </div>
     );
   }

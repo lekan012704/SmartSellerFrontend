@@ -101,6 +101,7 @@ export interface UpdateUserRequestDto {
 
 export interface UserDto {
   id:           string;
+  userId?: string;
   email:        string;
   userName:     string;
   role:         string;
